@@ -34,9 +34,6 @@ ui_selectedstocks <- fluidPage(
                                                    "Select from a list of presets:", 
                                                    choices = names(input_presets)),
                                        actionButton("apply_preset", "Apply Preset"),
-                                       style = "default"),
-                       bsCollapsePanel("Portfolio",
-                                       "Track returns from a custom portfolio",
                                        style = "default")
             ),
             

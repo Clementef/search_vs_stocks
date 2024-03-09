@@ -38,7 +38,17 @@ server_portfolio <- function(input, output, session) {
             labs(title = "Random Scatterplot",
                  x = "X-axis",
                  y = "Y-axis") +
-            theme_bw()
+            theme_bw() +
+            theme(
+                text = element_text(size = 18, color="#f8f8f2"),
+                axis.text = element_text(color = "#f8f8f2"),
+                panel.grid = element_line(color = "#555555"),
+                panel.background = element_blank(),
+                plot.background = element_blank(),
+                legend.background = element_blank(),
+                legend.key = element_blank(),
+                legend.position = "bottom",
+            )
     })
     
     # render plot
