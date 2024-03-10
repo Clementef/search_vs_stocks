@@ -1,4 +1,13 @@
 server_portfolio <- function(input, output, session) {
+    # preset controls
+    observeEvent(input$portfolio_preset_update, {
+        preset_values <- input_presets[[input$portfolio_preset]]
+        updateTextInput(session, "portfolio_search_term", value = preset_values$term)
+        updateSelectizeInput(session, "portfolio_symbols", selected = preset_values$symbol)
+        updateDateInput(session,"portfolio_start",value=preset_values$start)
+        updateDateInput(session,"portfolio_end",value=preset_values$end)
+    })
+    
     # create text inputs based on selected symbols
     observeEvent(input$portfolio_symbols, {
         output$portfolio_proportions <- renderUI({
@@ -70,13 +79,14 @@ server_portfolio <- function(input, output, session) {
             geom_line(data=portfolio_returns_df, aes(x = date, y = portfolio.returns, color='portfolio returns')) +
             # search trend data
             geom_point(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
-                                            color=paste("Relative search frequency for \"",portfolio_search_term,"\""))) +
+                                            color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\""))) +
             geom_line(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
-                                           color=paste("Relative search frequency for \"",portfolio_search_term,"\""))) +
+                                           color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\""))) +
             # stock data
             labs(x = "Date", y="", 
                  title = paste(str_to_title(input$portfolio_period),
-                               "Portfolio Returns Over Time"),
+                               "Portfolio Returns and Search Frequency for \"",
+                               portfolio_search_term, "\""),
                  color="Legend") +
             theme_bw() +
             theme(

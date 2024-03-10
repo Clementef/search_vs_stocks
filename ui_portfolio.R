@@ -6,7 +6,8 @@ ui_portfolio <- fluidPage(
             # symbol input
             selectizeInput("portfolio_symbols", "Select Stocks:", 
                            choices=all_stocks_list, 
-                           selected = c("AAPL (APPLE INC)"), 
+                           selected = c("AAPL (APPLE INC)",
+                                        "META (META PLATFORMS INC CLASS A)"), 
                            multiple = TRUE, options = NULL),
             
             # portfolio return period
@@ -33,7 +34,25 @@ ui_portfolio <- fluidPage(
             uiOutput("portfolio_proportions"),
             
             # submit button
-            actionButton("portfolio_submit", "Submit")
+            actionButton("portfolio_submit", "Submit"),
+            
+            br(),br(),
+            
+            # preset controls
+            bsCollapse(id = "Portfolio Settings Collapse",
+                       bsCollapsePanel("Examples",
+                                       selectInput("portfolio_preset", 
+                                                   "Select from a list of presets:", 
+                                                   choices = names(input_presets)),
+                                       actionButton("portfolio_preset_update", 
+                                                    "Apply Preset"),
+                                       style = "default")
+            ),
+            
+            # footnote
+            paste("*Search trends data is on a relative scale (0-100),",
+                  "which is then scaled to match the price range of selected",
+                  "stocks over the selected date range.")
         ),
         
         mainPanel(

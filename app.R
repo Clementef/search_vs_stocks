@@ -35,7 +35,7 @@ source(here("server_portfolio.R"))
 shinyApp(
     ui = navbarPage(
         theme = shinytheme("slate"),
-        "Stock Values vs. Search Trends",
+        "Search vs. Stocks",
         tabPanel("Selected Stocks", ui_selectedstocks),
         tabPanel("Custom Portfolio", ui_portfolio)
     ),

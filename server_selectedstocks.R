@@ -44,14 +44,14 @@ server_selectedstocks <- function(input, output, session) {
         ggplot() +
             # search trend data
             geom_point(data=trend_data, aes(x=date, y=hits_scaled, 
-                                            color=paste("Relative search frequency for \"",search_term,"\""))) +
+                                            color=paste("Relative Fearch Frequency for \"",search_term,"\""))) +
             geom_line(data=trend_data, aes(x=date, y=hits_scaled,
-                                           color=paste("Relative search frequency for \"",search_term,"\""))) +
+                                           color=paste("Relative Fearch Frequency for \"",search_term,"\""))) +
             # stock data
             geom_point(data=stock_prices_df, aes(x=date, y=adjusted, color=symbol)) +
             geom_line(data=stock_prices_df, aes(x=date, y=adjusted, color=symbol)) +
             labs(x = paste("Date"), y = "", 
-                 title = paste0("Selected Stock Prices and Search frequency for \"", 
+                 title = paste0("Selected Stock Prices and Search Frequency for \"", 
                                 search_term, "\""), 
                  color = "Legend") +
             theme_bw() +
