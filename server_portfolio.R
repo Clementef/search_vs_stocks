@@ -22,22 +22,62 @@ server_portfolio <- function(input, output, session) {
         proportions <- sapply(1:length(input$portfolio_symbols), function(i) {
             input[[paste0("proportion", i)]]
         })
+        
         symbols <- str_extract(input$portfolio_symbols, "\\b\\w+\\b")
-        print(proportions)
-        print(symbols)
         
+        stock_prices_df <- tq_get(symbols,
+                                  from = input$portfolio_start,
+                                  to = input$portfolio_end,
+                                  get = "stock.prices")
         
-        data <- data.frame(
-            x = rnorm(100),
-            y = rnorm(100)
-        )
+        # Calculate the stock returns
+        stock_returns <- stock_prices_df %>%
+            group_by(symbol) %>%
+            tq_transmute(select = adjusted, mutate_fun = periodReturn, period = input$portfolio_period, type = "log")
+        stock_returns <- stock_returns %>% rename_with(~ "returns", matches(".*\\.returns"))
+        # Use tq_portfolio
+        portfolio_returns_df <- tq_portfolio(data = stock_returns,
+                                             assets_col = symbol,
+                                             returns_col = returns,
+                                             weights = proportions)
+        portfolio_returns_df$date <- as.POSIXct(portfolio_returns_df$date)
+        # get gtrendsr data
+        portfolio_search_term <- input$portfolio_search_term
+        portfolio_date_range <- paste(input$portfolio_start,input$portfolio_end)
+        portfolio_trend_data <- query_gtrends(portfolio_search_term,
+                                    portfolio_date_range) %>%
+            bind_rows()
+        portfolio_trend_data$date <- as.POSIXct(portfolio_trend_data$date)
         
-        # Create the scatterplot using ggplot2
-        ggplot(data, aes(x = x, y = y)) +
-            geom_point(color = "blue", size = 3) +
-            labs(title = "Random Scatterplot",
-                 x = "X-axis",
-                 y = "Y-axis") +
+        # clean trend data
+        if (!is.numeric(portfolio_trend_data$hits)) {
+            portfolio_trend_data$hits <- as.numeric(as.character(portfolio_trend_data$hits))
+        }
+        portfolio_trend_data$hits[is.na(portfolio_trend_data$hits)] <- 0
+        
+        # scaling factor
+        min_stock <- min(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
+        max_stock <- max(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
+        min_gtrends <- min(portfolio_trend_data$hits, na.rm = TRUE)
+        max_gtrends <- max(portfolio_trend_data$hits, na.rm = TRUE)
+        scale_factor <- (max_stock - min_stock) / (max_gtrends - min_gtrends)
+        portfolio_trend_data$hits_scaled <- scale_factor * (portfolio_trend_data$hits - min_gtrends) + min_stock
+        portfolio_trend_data$hits_scaled
+        # Plot the returns
+        ggplot() +
+            # portfolio data
+            geom_point(data=portfolio_returns_df, aes(x = date, y = portfolio.returns, color='portfolio returns')) +
+            geom_line(data=portfolio_returns_df, aes(x = date, y = portfolio.returns, color='portfolio returns')) +
+            # search trend data
+            geom_point(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
+                                            color=paste("Relative search frequency for \"",portfolio_search_term,"\""))) +
+            geom_line(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
+                                           color=paste("Relative search frequency for \"",portfolio_search_term,"\""))) +
+            # stock data
+            labs(x = "Date", y="", 
+                 title = paste(str_to_title(input$portfolio_period),
+                               "Portfolio Returns Over Time (Log Scale)"),
+                 color="Legend") +
             theme_bw() +
             theme(
                 text = element_text(size = 18, color="#f8f8f2"),
