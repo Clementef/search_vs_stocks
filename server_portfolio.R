@@ -33,7 +33,7 @@ server_portfolio <- function(input, output, session) {
         # Calculate the stock returns
         stock_returns <- stock_prices_df %>%
             group_by(symbol) %>%
-            tq_transmute(select = adjusted, mutate_fun = periodReturn, period = input$portfolio_period, type = "log")
+            tq_transmute(select = adjusted, mutate_fun = periodReturn, period = input$portfolio_period)
         stock_returns <- stock_returns %>% rename_with(~ "returns", matches(".*\\.returns"))
         # Use tq_portfolio
         portfolio_returns_df <- tq_portfolio(data = stock_returns,
@@ -76,7 +76,7 @@ server_portfolio <- function(input, output, session) {
             # stock data
             labs(x = "Date", y="", 
                  title = paste(str_to_title(input$portfolio_period),
-                               "Portfolio Returns Over Time (Log Scale)"),
+                               "Portfolio Returns Over Time"),
                  color="Legend") +
             theme_bw() +
             theme(
