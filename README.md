@@ -2,8 +2,6 @@
 
 An R shiny webapp for comparing google search trends to stock prices. 
 
-Final project for STAT 331.
-
 ### Custom Portfolio
 
 ![Screenshot](screenshot_3.png)
