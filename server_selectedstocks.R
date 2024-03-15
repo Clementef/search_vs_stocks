@@ -18,12 +18,12 @@ server_selectedstocks <- function(input, output, session) {
         date_range <- paste(input$start_date,input$end_date)
         trend_data <- query_gtrends(search_term,date_range) %>%
             bind_rows()
-        trend_data$date <- as.Date(as.POSIXlt(trend_data$date, tz="GMT"))
+        trend_data$date <- ymd(trend_data$date)
         
         # get financial data
         symbols <- str_extract(input$stock_input, "\\b\\w+\\b")
         stock_prices_df <- quant_get(symbols, input$start_date,input$end_date)
-        stock_prices_df$date <- as.Date(as.POSIXlt(stock_prices_df$date, tz="GMT"))
+        stock_prices_df$date <- ymd(stock_prices_df$date)
         
         # clean trend data
         if (!is.numeric(trend_data$hits)) {
