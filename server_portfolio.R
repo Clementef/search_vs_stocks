@@ -50,7 +50,7 @@ server_portfolio <- function(input, output, session) {
                                              returns_col = returns,
                                              weights = proportions)
         portfolio_returns_df$date <- as.Date(as.POSIXlt(portfolio_returns_df$date,
-                                                "GMT"))
+                                                tz="GMT"))
         # get gtrendsr data
         portfolio_search_term <- input$portfolio_search_term
         portfolio_date_range <- paste(input$portfolio_start,input$portfolio_end)
