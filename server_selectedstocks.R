@@ -18,7 +18,7 @@ server_selectedstocks <- function(input, output, session) {
         date_range <- paste(input$start_date,input$end_date)
         trend_data <- query_gtrends(search_term,date_range) %>%
             bind_rows()
-        trend_data$date <- as.Date(as.POSIXct(trend_data$date, tz="GMT"))
+        trend_data$date <- as.Date(as.POSIXlt(trend_data$date, tz="GMT"))
         
         # get financial data
         symbols <- str_extract(input$stock_input, "\\b\\w+\\b")
