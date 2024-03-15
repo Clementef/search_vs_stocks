@@ -59,7 +59,6 @@ server_portfolio <- function(input, output, session) {
             bind_rows()
         portfolio_trend_data$date <- as.Date(as.POSIXlt(portfolio_trend_data$date,
                                                 tz="GMT"))
-        
         # clean trend data
         if (!is.numeric(portfolio_trend_data$hits)) {
             portfolio_trend_data$hits <- as.numeric(as.character(portfolio_trend_data$hits))
