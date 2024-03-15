@@ -49,14 +49,16 @@ server_portfolio <- function(input, output, session) {
                                              assets_col = symbol,
                                              returns_col = returns,
                                              weights = proportions)
-        portfolio_returns_df$date <- as.POSIXct(portfolio_returns_df$date)
+        portfolio_returns_df$date <- as.Date(as.POSIXlt(portfolio_returns_df$date,
+                                                "GMT"))
         # get gtrendsr data
         portfolio_search_term <- input$portfolio_search_term
         portfolio_date_range <- paste(input$portfolio_start,input$portfolio_end)
         portfolio_trend_data <- query_gtrends(portfolio_search_term,
                                     portfolio_date_range) %>%
             bind_rows()
-        portfolio_trend_data$date <- as.POSIXct(portfolio_trend_data$date)
+        portfolio_trend_data$date <- as.Date(as.POSIXlt(portfolio_trend_data$date,
+                                                tz="GMT"))
         
         # clean trend data
         if (!is.numeric(portfolio_trend_data$hits)) {
