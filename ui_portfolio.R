@@ -16,7 +16,10 @@ ui_portfolio <- fluidPage(
                         selected = "daily"),
             
             # search terms input
-            textInput("portfolio_search_term", "Enter Search Term*:", "vision pro"),
+            tags$div(
+                style = "display: none;",
+                textInput("portfolio_search_term", "Enter Search Term*:", ""),
+            ),
             
             # date range input
             fluidRow(
@@ -57,7 +60,11 @@ ui_portfolio <- fluidPage(
         
         mainPanel(
             withSpinner(plotOutput("portfolio_plot"), 
-                        type = 1, color="#dbdbdb")
+                        type = 1, color="#dbdbdb"),
+            tags$div(
+                style = "color: red; text-align: center;",
+                textOutput("warning_text")
+            )
         )
     )
 )

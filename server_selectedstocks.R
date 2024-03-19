@@ -15,44 +15,43 @@ server_selectedstocks <- function(input, output, session) {
         
         # get gtrendsr data
         search_term <- input$keyword
-        date_range <- paste(input$start_date,input$end_date)
-        trend_data <- query_gtrends(search_term,date_range) %>%
-            bind_rows()
-        trend_data$date <- ymd(trend_data$date)
+        if (nchar(search_term)!=0 && trends_enabled) {
+            date_range <- paste(input$start_date,input$end_date)
+            trend_data <- query_gtrends(search_term,date_range) %>%
+                bind_rows()
+            trend_data$date <- ymd(trend_data$date)
+        }
         
         # get financial data
         symbols <- str_extract(input$stock_input, "\\b\\w+\\b")
         stock_prices_df <- quant_get(symbols, input$start_date,input$end_date)
         stock_prices_df$date <- ymd(stock_prices_df$date)
         
-        # clean trend data
-        if (!is.numeric(trend_data$hits)) {
-            trend_data$hits <- as.numeric(as.character(trend_data$hits))
+        # clean and scale trend data
+        if (nchar(search_term)!=0 && trends_enabled) {
+            # clean trend data
+            if (!is.numeric(trend_data$hits)) {
+                trend_data$hits <- as.numeric(as.character(trend_data$hits))
+            }
+            trend_data$hits[is.na(trend_data$hits)] <- 0
+            
+            # scaling factor
+            min_stock <- min(stock_prices_df$adjusted, na.rm = TRUE)
+            max_stock <- max(stock_prices_df$adjusted, na.rm = TRUE)
+            min_gtrends <- min(trend_data$hits, na.rm = TRUE)
+            max_gtrends <- max(trend_data$hits, na.rm = TRUE)
+            scale_factor <- (max_stock - min_stock) / (max_gtrends - min_gtrends)
+            trend_data$hits_scaled <- scale_factor * (trend_data$hits - min_gtrends) + min_stock
         }
-        trend_data$hits[is.na(trend_data$hits)] <- 0
-        
-        # scaling factor
-        min_stock <- min(stock_prices_df$adjusted, na.rm = TRUE)
-        max_stock <- max(stock_prices_df$adjusted, na.rm = TRUE)
-        min_gtrends <- min(trend_data$hits, na.rm = TRUE)
-        max_gtrends <- max(trend_data$hits, na.rm = TRUE)
-        scale_factor <- (max_stock - min_stock) / (max_gtrends - min_gtrends)
-        trend_data$hits_scaled <- scale_factor * (trend_data$hits - min_gtrends) + min_stock
-        
         
         # plot
-        ggplot() +
-            # search trend data
-            geom_point(data=trend_data, aes(x=date, y=hits_scaled, 
-                                            color=paste("Relative Fearch Frequency for \"",search_term,"\""))) +
-            geom_line(data=trend_data, aes(x=date, y=hits_scaled,
-                                           color=paste("Relative Fearch Frequency for \"",search_term,"\""))) +
+        main_plot <- ggplot() +
             # stock data
             geom_point(data=stock_prices_df, aes(x=date, y=adjusted, color=symbol)) +
             geom_line(data=stock_prices_df, aes(x=date, y=adjusted, color=symbol)) +
             labs(x = paste("Date"), y = "", 
-                 title = paste0("Selected Stock Prices and Search Frequency for \"", 
-                                search_term, "\""), 
+                 title = paste0("Selected Stock Prices", # and Search Frequency for \"", search_term, 
+                                "\""), 
                  color = "Legend") +
             theme_bw() +
             theme(
@@ -65,6 +64,16 @@ server_selectedstocks <- function(input, output, session) {
                 legend.key = element_blank(),
                 legend.position = "bottom",
             )
+        
+        if (nchar(search_term)!=0 && trends_enabled) {
+            # search trend data
+            main_plot <- main_plot +
+                geom_point(data=trend_data, aes(x=date, y=hits_scaled, 
+                                                color=paste("Relative Search Frequency for \"",search_term,"\""))) +
+                geom_line(data=trend_data, aes(x=date, y=hits_scaled,
+                                               color=paste("Relative Search Frequency for \"",search_term,"\"")))
+        }
+        main_plot
     })
     
     # render plot

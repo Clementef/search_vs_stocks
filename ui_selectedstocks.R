@@ -8,7 +8,11 @@ ui_selectedstocks <- fluidPage(
                            selected = c("AAPL (APPLE INC)"), multiple = TRUE, options = NULL),
             
             # search terms input
-            textInput("keyword", "Enter Search Term*:", "vision pro"),
+            # search terms input
+            tags$div(
+                style = "display: none;",
+                textInput("keyword", "Enter Search Term*:", ""),
+            ),
             
             # date range input
             fluidRow(

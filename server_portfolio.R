@@ -32,6 +32,15 @@ server_portfolio <- function(input, output, session) {
             input[[paste0("proportion", i)]]
         })
         
+        max_proportion <- max(proportions)
+    
+        if (max_proportion>=0.8) {
+            output$warning_text <- renderText({
+                paste("Warning: Your portfolio is not diverse enough, one of your stocks has weight",
+                      max_proportion)
+            })
+        }
+        
         symbols <- str_extract(input$portfolio_symbols, "\\b\\w+\\b")
         
         stock_prices_df <- tq_get(symbols,
@@ -50,42 +59,40 @@ server_portfolio <- function(input, output, session) {
                                              returns_col = returns,
                                              weights = proportions)
         portfolio_returns_df$date <- ymd(portfolio_returns_df$date)
+        
         # get gtrendsr data
         portfolio_search_term <- input$portfolio_search_term
-        portfolio_date_range <- paste(input$portfolio_start,input$portfolio_end)
-        portfolio_trend_data <- query_gtrends(portfolio_search_term,
-                                    portfolio_date_range) %>%
-            bind_rows()
-        portfolio_trend_data$date <- ymd(portfolio_trend_data$date)
-        # clean trend data
-        if (!is.numeric(portfolio_trend_data$hits)) {
-            portfolio_trend_data$hits <- as.numeric(as.character(portfolio_trend_data$hits))
+        if (nchar(portfolio_search_term)!=0 && trends_enabled) {
+            portfolio_date_range <- paste(input$portfolio_start,input$portfolio_end)
+            portfolio_trend_data <- query_gtrends(portfolio_search_term,
+                                        portfolio_date_range) %>%
+                bind_rows()
+            portfolio_trend_data$date <- ymd(portfolio_trend_data$date)
+            # clean trend data
+            if (!is.numeric(portfolio_trend_data$hits)) {
+                portfolio_trend_data$hits <- as.numeric(as.character(portfolio_trend_data$hits))
+            }
+            portfolio_trend_data$hits[is.na(portfolio_trend_data$hits)] <- 0
+            
+            # scaling factor
+            min_stock <- min(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
+            max_stock <- max(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
+            min_gtrends <- min(portfolio_trend_data$hits, na.rm = TRUE)
+            max_gtrends <- max(portfolio_trend_data$hits, na.rm = TRUE)
+            scale_factor <- (max_stock - min_stock) / (max_gtrends - min_gtrends)
+            portfolio_trend_data$hits_scaled <- scale_factor * (portfolio_trend_data$hits - min_gtrends) + min_stock
+            portfolio_trend_data$hits_scaled
         }
-        portfolio_trend_data$hits[is.na(portfolio_trend_data$hits)] <- 0
-        
-        # scaling factor
-        min_stock <- min(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
-        max_stock <- max(portfolio_returns_df$portfolio.returns, na.rm = TRUE)
-        min_gtrends <- min(portfolio_trend_data$hits, na.rm = TRUE)
-        max_gtrends <- max(portfolio_trend_data$hits, na.rm = TRUE)
-        scale_factor <- (max_stock - min_stock) / (max_gtrends - min_gtrends)
-        portfolio_trend_data$hits_scaled <- scale_factor * (portfolio_trend_data$hits - min_gtrends) + min_stock
-        portfolio_trend_data$hits_scaled
         # Plot the returns
-        ggplot() +
+        main_plot <- ggplot() +
             # portfolio data
             geom_point(data=portfolio_returns_df, aes(x = date, y = portfolio.returns, color='portfolio returns')) +
             geom_line(data=portfolio_returns_df, aes(x = date, y = portfolio.returns, color='portfolio returns')) +
-            # search trend data
-            geom_point(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
-                                            color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\""))) +
-            geom_line(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
-                                           color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\""))) +
             # stock data
             labs(x = "Date", y="", 
                  title = paste(str_to_title(input$portfolio_period),
-                               "Portfolio Returns and Search Frequency for \"",
-                               portfolio_search_term, "\""),
+                               "Portfolio Returns", #and Search Frequency for \"",portfolio_search_term, 
+                               "\""),
                  color="Legend") +
             theme_bw() +
             theme(
@@ -98,6 +105,15 @@ server_portfolio <- function(input, output, session) {
                 legend.key = element_blank(),
                 legend.position = "bottom",
             )
+        if (nchar(portfolio_search_term)!=0 && trends_enabled) {
+            # search trend data
+            main_plot <- main_plot +
+                geom_point(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
+                                                          color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\""))) +
+                geom_line(data=portfolio_trend_data, aes(x=date, y=hits_scaled,
+                                                         color=paste("Relative Fearch Frequency for \"",portfolio_search_term,"\"")))
+        }
+        main_plot
     })
     
     # render plot

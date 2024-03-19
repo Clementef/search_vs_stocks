@@ -13,3 +13,5 @@ query_gtrends <- function(search, input_time) {
         onlyInterest = TRUE
     )$interest_over_time
 }
+
+trends_enabled <- FALSE
